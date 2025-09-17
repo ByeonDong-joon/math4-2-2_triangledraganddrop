@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>개인용 삼각형 퀴즈 (정확 기하/하이라이트)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f192e; --ink:#f0f4ff; --muted:#a8b7d8;
+      --accent:#7aa2ff; --good:#2ee69a; --bad:#ff6b81; --warn:#ffd166;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#16223c 0%,transparent 70%),linear-gradient(180deg,#0b1220 0%,#0d1424 100%);color:var(--ink)}
+    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+    .card{background:linear-gradient(180deg,#0f182b 0%,#0d1526 100%);border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 40px rgba(0,0,0,.45);border-radius:20px}
+    header.card{padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    header h1{font-size:20px;margin:0;letter-spacing:.2px}
+    .chip{padding:8px 12px;border-radius:999px;background:rgba(122,162,255,.12);border:1px solid rgba(122,162,255,.25);color:var(--ink);font-weight:600}
+    .row{display:grid;grid-template-columns:1fr 440px;gap:16px}
+    @media (max-width:980px){.row{grid-template-columns:1fr}}
+    .pane{padding:18px}
+    .pane h2{margin:0 0 10px 0;font-size:18px;color:var(--ink)}
+    .sub{color:var(--muted);font-size:14px;margin-top:2px}
+    button{background:var(--accent);color:#06112b;border:none;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;transition:.2s transform, .2s opacity, .2s box-shadow;box-shadow:0 6px 16px rgba(122,162,255,.25)}
+    button[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+    button:active{transform:translateY(1px)}
+    .ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.18);box-shadow:none}
+    canvas{background:#0a1120;border:1px solid rgba(255,255,255,.08);border-radius:16px;width:100%;height:400px}
+    .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+    .opt{position:relative;padding:14px 16px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(180deg,#0f192e,#0e182c);display:flex;align-items:center;gap:12px;min-height:54px;cursor:pointer;user-select:none;transition:.2s border-color,.2s background,.2s box-shadow}
+    .opt:hover{border-color:rgba(122,162,255,.6)}
+    .opt.selected{border-color:var(--accent);background:linear-gradient(180deg,rgba(122,162,255,.18),rgba(122,162,255,.10));box-shadow:0 8px 22px rgba(122,162,255,.25) inset}
+    .opt.disabled{opacity:.6;pointer-events:none;filter:grayscale(.2)}
+    .opt input{position:absolute;inset:0;opacity:0;pointer-events:none}
+    .muted{color:var(--muted)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+    .stat{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--ink);padding:8px 10px;border-radius:999px;font-size:13px;font-weight:600}
+    .notice{padding:12px 14px;border:1px dashed rgba(255,255,255,.28);border-radius:12px;background:rgba(255,255,255,.06);color:var(--muted);font-size:14px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .right{text-align:right}
+    .footer{margin-top:10px;font-size:12px;color:var(--muted)}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);margin:12px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="card">
+      <h1>개인용 삼각형 퀴즈</h1>
+      <div class="stat">
+        <span class="pill">진행: <span id="progress" class="mono">0/15</span></span>
+        <span class="pill">맞힌 수: <span id="correctCnt" class="mono">0</span></span>
+        <span class="pill">경과 시간: <span id="timer" class="mono">00:00.00</span></span>
+        <button id="btnStart">시작(15문제)</button>
+        <button id="btnReset" class="ghost" disabled>다시 시작</button>
+      </div>
+    </header>
+
+    <div class="row">
+      <!-- 문제 패널 -->
+      <section class="card pane">
+        <h2>문제</h2>
+        <div class="sub">삼각형이 무작위로 생성되며, <b>변의 길이(정수, cm)</b>만 표시됩니다. 실제 길이 비율과 각도를 그대로 반영해 그립니다.</div>
+        <div class="hr"></div>
+        <canvas id="triCanvas" width="740" height="420"></canvas>
+      </section>
+
+      <!-- 선택 패널 -->
+      <section class="card pane">
+        <h2>정답 선택</h2>
+        <div class="sub">아래에서 <b>변 분류 1개 + 각 분류 1개</b>를 골라 <b>제출</b>하세요. (박스 아무 곳이나 클릭)</div>
+        <div class="hr"></div>
+        <div class="grid" id="sideGroup">
+          <label class="opt" data-group="side" data-value="scalene">세 변의 길이가 모두 다른 삼각형<input type="radio" name="side" value="scalene"></label>
+          <label class="opt" data-group="side" data-value="isosceles">이등변삼각형<input type="radio" name="side" value="isosceles"></label>
+          <label class="opt" data-group="side" data-value="equilateral">정삼각형<input type="radio" name="side" value="equilateral"></label>
+        </div>
+        <div class="grid" id="angleGroup" style="margin-top:6px">
+          <label class="opt" data-group="angle" data-value="acute">예각삼각형<input type="radio" name="angle" value="acute"></label>
+          <label class="opt" data-group="angle" data-value="right">직각삼각형<input type="radio" name="angle" value="right"></label>
+          <label class="opt" data-group="angle" data-value="obtuse">둔각삼각형<input type="radio" name="angle" value="obtuse"></label>
+        </div>
+        <div class="split" style="margin-top:12px">
+          <div>
+            <div id="feedback" class="notice">시작 버튼을 누르세요.</div>
+          </div>
+          <div class="right">
+            <button id="btnSubmit" disabled>제출</button>
+          </div>
+        </div>
+        <div class="footer">※ 오답 시 <b>3초간</b> 선택이 잠깁니다. 다음 문제로 넘어가면 선택은 자동 초기화됩니다.</div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ===== 설정 =====
+    const TOTAL_QUESTIONS = 15;
+    const BANNED_MIN = 75; // (deg) non-right 에서 금지 구간
+    const BANNED_MAX = 105;
+
+    // ===== 엘리먼트 =====
+    const $ = s => document.querySelector(s);
+    const canvas = $('#triCanvas');
+    const ctx = canvas.getContext('2d');
+    const progressEl = $('#progress');
+    const correctCntEl = $('#correctCnt');
+    const timerEl = $('#timer');
+    const btnStart = $('#btnStart');
+    const btnReset = $('#btnReset');
+    const btnSubmit = $('#btnSubmit');
+    const feedback = $('#feedback');
+
+    // 카드(옵션) DOM
+    const cardEls = [...document.querySelectorAll('.opt')];
+
+    // ===== 상태 =====
+    let started = false;
+    let qIndex = 0; // 0..14
+    let correctCnt = 0;
+    let timerId = null; let startTime = 0;
+    let current = null; // {sides:[a,b,c], sideType, angleType}
+    let locked = false;
+
+    // ===== 도우미 =====
+    const randInt = (mn,mx)=> Math.floor(Math.random()*(mx-mn+1))+mn;
+    const nearly = (x,y,eps=1e-9)=> Math.abs(x-y) <= eps;
+
+    function resetCards(){
+      document.querySelectorAll('.opt.selected').forEach(el=> el.classList.remove('selected'));
+      document.querySelectorAll('.opt input').forEach(i=>{ i.checked=false; });
+      btnSubmit.disabled = true;
+    }
+    function getSelections(){
+      const s = document.querySelector('input[name="side"]:checked');
+      const a = document.querySelector('input[name="angle"]:checked');
+      return s && a ? {side:s.value, angle:a.value} : null;
+    }
+    function updateTopBar(){
+      progressEl.textContent = `${Math.min(qIndex, TOTAL_QUESTIONS)}/${TOTAL_QUESTIONS}`;
+      correctCntEl.textContent = String(correctCnt);
+    }
+    function fmtTime(ms){
+      const t = Math.max(0, ms|0);
+      const m = String(Math.floor(t/60000)).padStart(2,'0');
+      const s = String(Math.floor((t%60000)/1000)).padStart(2,'0');
+      const cs = String(Math.floor((t%1000)/10)).padStart(2,'0');
+      return `${m}:${s}.${cs}`;
+    }
+    function startTimer(){
+      startTime = Date.now();
+      timerId = setInterval(()=>{ timerEl.textContent = fmtTime(Date.now()-startTime); }, 31);
+    }
+    function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+
+    // ===== 수학 유틸 =====
+    function classifySide(a,b,c){
+      const eps=1e-9;
+      if(nearly(a,b,eps) && nearly(b,c,eps)) return 'equilateral';
+      if(nearly(a,b,eps) || nearly(b,c,eps) || nearly(a,c,eps)) return 'isosceles';
+      return 'scalene';
+    }
+    function classifyAngle(a,b,c){
+      const s=[a,b,c].sort((x,y)=>x-y); const x=s[0], y=s[1], z=s[2];
+      const lhs = x*x + y*y, rhs=z*z; const eps=1e-8;
+      if(Math.abs(lhs-rhs)<=eps) return 'right';
+      return lhs>rhs? 'acute':'obtuse';
+    }
+    function anglesDeg(a,b,c){
+      // 법코사인: A는 a 대변의 각
+      function ang(op, ad1, ad2){
+        const v = (ad1*ad1 + ad2*ad2 - op*op) / (2*ad1*ad2);
+        const clamped = Math.max(-1, Math.min(1, v));
+        return Math.acos(clamped) * 180/Math.PI;
+      }
+      return [ang(a,b,c), ang(b,a,c), ang(c,a,b)];
+    }
+    function safeAngles(a,b,c){
+      const type = classifyAngle(a,b,c);
+      if(type==='right') return true;
+      const angs = anglesDeg(a,b,c);
+      return angs.every(A => (A < BANNED_MIN || A > BANNED_MAX));
+    }
+
+    // ===== 생성기 (모두 정수 길이만 사용) =====
+    function genEquilateral(){
+      const L = randInt(4,12); // 4~12 cm
+      return [L,L,L];
+    }
+    function genIsosceles(angle){
+      for(let tries=0; tries<300; tries++){
+        const a = randInt(5,20); // equal sides
+        let cMin = 2, cMax = 2*a - 1;
+        if(angle==='acute'){
+          cMax = Math.min(cMax, Math.floor(Math.SQRT2*a) - 1);
+        } else if(angle==='obtuse'){
+          cMin = Math.max(cMin, Math.floor(Math.SQRT2*a) + 1);
+        } else if(angle==='right'){
+          continue; // 정수 변으로는 불가
+        }
+        if(cMin>cMax) continue;
+        const c = randInt(cMin, cMax);
+        const tri=[a,a,c];
+        if(classifyAngle(...tri)!==angle) continue;
+        if(!safeAngles(...tri)) continue;
+        return tri;
+      }
+      return null;
+    }
+    function genScaleneRight(){
+      const triples = [ [3,4,5], [5,12,13], [6,8,10], [7,24,25], [8,15,17], [9,12,15], [9,40,41], [12,16,20] ];
+      const t = triples[Math.floor(Math.random()*triples.length)].slice();
+      const k = randInt(1,2);
+      const tri = t.map(x=>x*k);
+      return tri;
+    }
+    function genScaleneAcute(){
+      for(let tries=0; tries<500; tries++){
+        let a = randInt(5,24), b = randInt(5,24), c = randInt(5,24);
+        if(a===b || b===c || a===c) continue;
+        if(!(a+b>c && a+c>b && b+c>a)) continue;
+        if(classifyAngle(a,b,c)!=='acute') continue;
+        if(!safeAngles(a,b,c)) continue;
+        return [a,b,c];
+      }
+      return null;
+    }
+    function genScaleneObtuse(){
+      for(let tries=0; tries<500; tries++){
+        let a = randInt(6,28), b = randInt(6,28), c = randInt(6,28);
+        if(a===b || b===c || a===c) continue;
+        if(!(a+b>c && a+c>b && b+c>a)) continue;
+        if(classifyAngle(a,b,c)!=='obtuse') continue;
+        if(!safeAngles(a,b,c)) continue;
+        return [a,b,c];
+      }
+      return null;
+    }
+
+    function genTrianglePair(){
+      const anglePick = ['acute','right','obtuse'][randInt(0,2)];
+      const feasible = anglePick==='acute' ? ['scalene','isosceles','equilateral']
+                      : anglePick==='right' ? ['scalene']
+                      : ['scalene','isosceles'];
+      const sidePick = feasible[randInt(0,feasible.length-1)];
+
+      for(let tries=0; tries<300; tries++){
+        let tri=null;
+        if(sidePick==='equilateral') tri = genEquilateral();
+        else if(sidePick==='isosceles') tri = genIsosceles(anglePick);
+        else if(sidePick==='scalene'){
+          if(anglePick==='right') tri = genScaleneRight();
+          else if(anglePick==='acute') tri = genScaleneAcute();
+          else tri = genScaleneObtuse();
+        }
+        if(!tri) continue;
+        const sType = classifySide(...tri);
+        const aType = classifyAngle(...tri);
+        if(sidePick==='equilateral' && aType!=='acute') continue;
+        if(sType===sidePick && aType=== (sidePick==='equilateral' ? 'acute' : anglePick)){
+          return {sides:tri, sideType:sType, angleType:aType};
+        }
+      }
+      return {sides:genEquilateral(), sideType:'equilateral', angleType:'acute'};
+    }
+
+    // ===== 렌더링 (정확 기하 유지) =====
+    function drawRightMarker(Cx,Cy, Ax,Ay, Bx,By){
+      // C에서 CA, CB 방향 단위벡터
+      const ux = (Ax-Cx), uy = (Ay-Cy); const ul = Math.hypot(ux,uy)||1; const u0x=ux/ul, u0y=uy/ul;
+      const vx = (Bx-Cx), vy = (By-Cy); const vl = Math.hypot(vx,vy)||1; const v0x=vx/vl, v0y=vy/vl;
+      const m = 14; // marker size
+      const p1x = Cx + u0x*m, p1y = Cy + u0y*m;
+      const cornerx = p1x + v0x*m, cornery = p1y + v0y*m;
+      const p2x = Cx + v0x*m, p2y = Cy + v0y*m;
+      ctx.beginPath();
+      ctx.moveTo(p1x,p1y); ctx.lineTo(cornerx,cornery); ctx.lineTo(p2x,p2y);
+      ctx.strokeStyle = '#9fd0ff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    function drawTriangleWithLabels(a,b,c){
+      // 정확한 비율 유지를 위해 가장 긴 변을 밑변(AB)으로, 나머지는 AC=b, BC=a로 배치
+      const sorted = [a,b,c].slice().sort((x,y)=>y-x); // 내림차순
+      const cLen = sorted[0]; // AB(밑변)
+      const bLen = sorted[1]; // AC
+      const aLen = sorted[2]; // BC
+
+      // C 좌표 계산 (AB=cLen, AC=bLen, BC=aLen)
+      let x = (bLen*bLen + cLen*cLen - aLen*aLen) / (2*cLen);
+      let y = Math.sqrt(Math.max(bLen*bLen - x*x, 0));
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const pad=34; const W=canvas.width-2*pad, H=canvas.height-2*pad;
+      const maxDim = Math.max(cLen, y);
+      const s = (Math.min(W,H)) / (maxDim*1.15 + 1); // 등비 스케일(왜곡 없음)
+
+      const Ax = pad, Ay = canvas.height - pad;
+      const Bx = pad + cLen*s, By = canvas.height - pad;
+      const Cx = pad + x*s, Cy = canvas.height - pad - y*s;
+
+      // 윤곽선
+      ctx.lineWidth = 3; ctx.strokeStyle = '#d9e6ff';
+      ctx.beginPath(); ctx.moveTo(Ax,Ay); ctx.lineTo(Bx,By); ctx.lineTo(Cx,Cy); ctx.closePath(); ctx.stroke();
+
+      // 길이 라벨 (정수 cm, AB/BC/CA 표기 없음)
+      ctx.fillStyle = '#c6d6ff'; ctx.font = '16px ui-monospace, Menlo, Consolas, monospace';
+      function mid(x1,y1,x2,y2){ return [(x1+x2)/2, (y1+y2)/2]; }
+      function write(txt, x,y){ ctx.save(); ctx.translate(x,y); ctx.fillText(txt,0,0); ctx.restore(); }
+
+      const [mABx,mABy] = mid(Ax,Ay,Bx,By); write(`${cLen} cm`, mABx-16, mABy-8);
+      const [mBCx,mBCy] = mid(Bx,By,Cx,Cy); write(`${aLen} cm`, mBCx+8, mBCy);
+      const [mCAx,mCAy] = mid(Cx,Cy,Ax,Ay); write(`${bLen} cm`, mCAx-40, mCAy-6);
+
+      // 직각 표시 (가장 긴 변의 맞은편 각)
+      const aType = classifyAngle(a,b,c);
+      if(aType==='right'){
+        drawRightMarker(Cx,Cy, Ax,Ay, Bx,By);
+      }
+    }
+
+    // ===== 게임 로직 =====
+    function nextProblem(){
+      current = genTrianglePair();
+      qIndex += 1;
+      drawTriangleWithLabels(...current.sides);
+      updateTopBar();
+      feedback.textContent = `문항 #${qIndex} — 변/각을 선택하여 제출하세요.`;
+      resetCards();
+    }
+
+    function onSubmit(){
+      if(!started || locked) return;
+      const sel = getSelections(); if(!sel) return;
+      const truthSide = classifySide(...current.sides);
+      const truthAngle = classifyAngle(...current.sides);
+      const ok = (sel.side===truthSide) && (sel.angle===truthAngle);
+      if(ok){
+        correctCnt += 1; updateTopBar();
+        feedback.innerHTML = '✅ <b>정답!</b> 다음 문제로 넘어갑니다.';
+        if(correctCnt >= TOTAL_QUESTIONS){
+          stopTimer();
+          feedback.innerHTML = `🎉 <b>완료!</b> 총 소요 시간: <b>${timerEl.textContent}</b>`;
+          btnSubmit.disabled = true; btnReset.disabled = false; started=false; return;
+        }
+        nextProblem();
+      } else {
+        feedback.innerHTML = '❌ <b>오답</b> — 3초간 잠깁니다. 표시된 길이를 잘 보세요.';
+        resetCards();
+        lockInputs(3000);
+      }
+    }
+
+    function lockInputs(ms){
+      locked = true;
+      document.querySelectorAll('.opt').forEach(el=> el.classList.add('disabled'));
+      btnSubmit.disabled = true;
+      setTimeout(()=>{
+        locked = false;
+        document.querySelectorAll('.opt').forEach(el=> el.classList.remove('disabled'));
+        btnSubmit.disabled = !getSelections();
+        feedback.textContent = `문항 #${qIndex} — 다시 시도해 보세요.`;
+      }, ms);
+    }
+
+    // 카드 클릭(박스 전체 클릭 & 하이라이트)
+    function attachCardHandlers(){
+      cardEls.forEach(el=>{
+        el.addEventListener('click', ()=>{
+          if(locked) return;
+          const group = el.dataset.group; const value = el.dataset.value;
+          // 그룹 내 기존 선택 해제
+          document.querySelectorAll(`.opt[data-group="${group}"]`).forEach(x=> x.classList.remove('selected'));
+          el.classList.add('selected');
+          // 실제 라디오 체크
+          const input = el.querySelector('input'); input.checked = true;
+          btnSubmit.disabled = !getSelections();
+        });
+      });
+    }
+
+    btnSubmit.addEventListener('click', onSubmit);
+
+    btnStart.addEventListener('click', ()=>{
+      started = true; qIndex=0; correctCnt=0; updateTopBar();
+      btnStart.disabled = true; btnReset.disabled = true; feedback.textContent='문제를 불러오는 중…';
+      resetCards();
+      startTimer();
+      nextProblem();
+      btnSubmit.disabled = true;
+    });
+
+    btnReset.addEventListener('click', ()=>{
+      stopTimer();
+      timerEl.textContent = '00:00.00';
+      started=false; qIndex=0; correctCnt=0; updateTopBar();
+      feedback.textContent='시작 버튼을 누르세요.';
+      resetCards();
+      btnStart.disabled = false; btnReset.disabled = true; btnSubmit.disabled = true;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    });
+
+    // 초기
+    attachCardHandlers();
+    updateTopBar();
+  </script>
+</body>
+</html>

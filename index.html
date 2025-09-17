@@ -1,408 +1,563 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>개인용 삼각형 퀴즈 (정확 기하/하이라이트)</title>
+  <title>삼각형 분류 게임</title>
   <style>
     :root{
-      --bg:#0b1220; --card:#0f192e; --ink:#f0f4ff; --muted:#a8b7d8;
-      --accent:#7aa2ff; --good:#2ee69a; --bad:#ff6b81; --warn:#ffd166;
+      --bg:#0b0f1a;
+      --card:#101624cc;
+      --glass:rgba(255,255,255,0.08);
+      --white:#f5f7ff;
+      --accent:#4da3ff;
+      --accent-2:#7ce7ff;
+      --success:#5bd69f;
+      --warn:#ffb84d;
+      --danger:#ff5d6c;
+      --shadow:0 20px 40px rgba(0,0,0,.35);
+      --radius:22px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#16223c 0%,transparent 70%),linear-gradient(180deg,#0b1220 0%,#0d1424 100%);color:var(--ink)}
-    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
-    .card{background:linear-gradient(180deg,#0f182b 0%,#0d1526 100%);border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 40px rgba(0,0,0,.45);border-radius:20px}
-    header.card{padding:16px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    header h1{font-size:20px;margin:0;letter-spacing:.2px}
-    .chip{padding:8px 12px;border-radius:999px;background:rgba(122,162,255,.12);border:1px solid rgba(122,162,255,.25);color:var(--ink);font-weight:600}
-    .row{display:grid;grid-template-columns:1fr 440px;gap:16px}
-    @media (max-width:980px){.row{grid-template-columns:1fr}}
-    .pane{padding:18px}
-    .pane h2{margin:0 0 10px 0;font-size:18px;color:var(--ink)}
-    .sub{color:var(--muted);font-size:14px;margin-top:2px}
-    button{background:var(--accent);color:#06112b;border:none;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;transition:.2s transform, .2s opacity, .2s box-shadow;box-shadow:0 6px 16px rgba(122,162,255,.25)}
-    button[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
-    button:active{transform:translateY(1px)}
-    .ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.18);box-shadow:none}
-    canvas{background:#0a1120;border:1px solid rgba(255,255,255,.08);border-radius:16px;width:100%;height:400px}
-    .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-    .opt{position:relative;padding:14px 16px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(180deg,#0f192e,#0e182c);display:flex;align-items:center;gap:12px;min-height:54px;cursor:pointer;user-select:none;transition:.2s border-color,.2s background,.2s box-shadow}
-    .opt:hover{border-color:rgba(122,162,255,.6)}
-    .opt.selected{border-color:var(--accent);background:linear-gradient(180deg,rgba(122,162,255,.18),rgba(122,162,255,.10));box-shadow:0 8px 22px rgba(122,162,255,.25) inset}
-    .opt.disabled{opacity:.6;pointer-events:none;filter:grayscale(.2)}
-    .opt input{position:absolute;inset:0;opacity:0;pointer-events:none}
-    .muted{color:var(--muted)}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
-    .stat{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .pill{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--ink);padding:8px 10px;border-radius:999px;font-size:13px;font-weight:600}
-    .notice{padding:12px 14px;border:1px dashed rgba(255,255,255,.28);border-radius:12px;background:rgba(255,255,255,.06);color:var(--muted);font-size:14px}
-    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .right{text-align:right}
-    .footer{margin-top:10px;font-size:12px;color:var(--muted)}
-    .hr{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);margin:12px 0}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Pretendard,Apple SD Gothic Neo,Helvetica,Arial,sans-serif;
+      color:var(--white);
+      background: radial-gradient(1200px 800px at 20% 10%, #13203b 0%, #0a0d16 45%, #070a12 100%),
+                  radial-gradient(1000px 600px at 90% 80%, #0e1c2e 0%, #0a0d16 50%, #070a12 100%);
+      overflow:hidden;
+    }
+    .app{
+      width:90vw; height:90vh; margin:5vh auto; position:relative;
+      display:grid; grid-template-columns: 1.4fr 0.6fr; gap:24px;
+      padding:24px; border-radius:28px; backdrop-filter: blur(12px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      box-shadow: var(--shadow);
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    header{
+      position:absolute; top:10px; left:24px; right:24px; display:flex; justify-content:flex-start; align-items:center;
+      pointer-events:none;
+    }
+    .title{font-weight:700; letter-spacing:0.3px; text-shadow:0 2px 20px rgba(0,0,0,.35)}
+
+    /* left grid: 3x3 cards */
+    .grid{
+      display:grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap:18px;
+      align-content:stretch; justify-items:stretch; height:100%;
+    }
+    .card{ position:relative; user-select:none; }
+    .card-inner{
+      position:absolute; inset:0; border-radius:var(--radius); overflow:hidden;
+      transition: box-shadow .3s;
+      box-shadow: var(--shadow); background: var(--card); border:1px solid rgba(255,255,255,.08);
+    }
+    /* reveal without flipping */
+    .card .front, .card .back{ position:absolute; inset:0; transition:opacity .4s ease; padding:8px; }
+    .card .back{ opacity:0 }
+    .card.revealed .front{ opacity:0 }
+    .card.revealed .back{ opacity:1 }
+
+    .face{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:56px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    }
+    .front{ color:#e9efff }
+    .back{ padding:8px; }
+    .card.active .card-inner{ box-shadow: 0 30px 60px rgba(0,120,255,.45) }
+    .triangle-wrap{ position:relative; width:100%; height:100%; border-radius:var(--radius);
+      background: radial-gradient(600px 280px at 40% 10%, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+    }
+    .triangle-wrap svg{ width:100%; height:100% }
+    .label{ font-size:13px; fill:#dfe7ff; text-shadow:0 2px 6px rgba(0,0,0,.6) }
+
+    /* right panel: bins */
+    .side{ display:grid; grid-template-rows: 1fr auto; gap:12px; height:100%; }
+    .bins{ display:grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap:14px; }
+    .bin{
+      position:relative; border-radius:20px; padding:12px; background:var(--glass);
+      border:1px solid rgba(255,255,255,.08); box-shadow: var(--shadow);
+      display:flex; align-items:center; justify-content:center; text-align:center;
+      font-weight:700; line-height:1.25; letter-spacing:.2px; padding-inline:16px;
+    }
+    .bin .badge{ position:absolute; top:10px; left:10px; font-size:11px; opacity:.8 }
+    .bin.filled{ filter: blur(1px) saturate(.8) brightness(.88); }
+    .bin.accepting{ outline:2px dashed var(--accent-2); outline-offset: -6px }
+
+    .footer{ display:flex; justify-content:space-between; align-items:center; }
+    .hint{ font-size:12px; opacity:.75 }
+
+    /* overlays */
+    .start-overlay, .blocker, .mission{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(180deg, rgba(10,13,22,.75), rgba(10,13,22,.75));
+      z-index:30; backdrop-filter: blur(6px);
+    }
+    .start-card{
+      width:min(540px, 90%); padding:28px; border-radius:26px; text-align:center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+      border:1px solid rgba(255,255,255,.12); box-shadow: var(--shadow);
+    }
+    .start-card h1{ margin:0 0 12px; font-size:32px }
+    .start-card p{ margin:0 0 20px; opacity:.85 }
+
+    .toast{
+      position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+      padding:10px 14px; border-radius:999px; background:#182238; border:1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow); font-size:14px; opacity:0; transition:opacity .25s, transform .25s;
+      z-index:40;
+    }
+    .toast.show{ opacity:1; transform:translateX(-50%) translateY(-6px) }
+
+    /* floating discard button (bottom-right) */
+    #discardBtn{
+      position:absolute; right:22px; bottom:18px; z-index:35;
+      appearance:none; border:0; padding:14px 18px; border-radius:18px; cursor:pointer; font-weight:600;
+      color:#0a0d16; background:linear-gradient(180deg, #ffdfe3, #ffb3bd);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 8px 18px rgba(0,0,0,.35);
+    }
+    #discardBtn[disabled]{ filter:grayscale(.4) brightness(.85); cursor:not-allowed }
+
+    @media (max-width: 1100px){
+      .app{ grid-template-columns: 1fr; overflow:auto; height:auto; }
+      body{ overflow:auto }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="card">
-      <h1>개인용 삼각형 퀴즈</h1>
-      <div class="stat">
-        <span class="pill">진행: <span id="progress" class="mono">0/15</span></span>
-        <span class="pill">맞힌 수: <span id="correctCnt" class="mono">0</span></span>
-        <span class="pill">경과 시간: <span id="timer" class="mono">00:00.00</span></span>
-        <button id="btnStart">시작(15문제)</button>
-        <button id="btnReset" class="ghost" disabled>다시 시작</button>
-      </div>
+  <div class="app" id="app">
+    <header>
+      <div class="title">📐 삼각형 분류 드래그&드롭</div>
     </header>
 
-    <div class="row">
-      <!-- 문제 패널 -->
-      <section class="card pane">
-        <h2>문제</h2>
-        <div class="sub">삼각형이 무작위로 생성되며, <b>변의 길이(정수, cm)</b>만 표시됩니다. 실제 길이 비율과 각도를 그대로 반영해 그립니다.</div>
-        <div class="hr"></div>
-        <canvas id="triCanvas" width="740" height="420"></canvas>
-      </section>
+    <section class="grid" id="cardGrid" aria-label="카드 9장"></section>
 
-      <!-- 선택 패널 -->
-      <section class="card pane">
-        <h2>정답 선택</h2>
-        <div class="sub">아래에서 <b>변 분류 1개 + 각 분류 1개</b>를 골라 <b>제출</b>하세요. (박스 아무 곳이나 클릭)</div>
-        <div class="hr"></div>
-        <div class="grid" id="sideGroup">
-          <label class="opt" data-group="side" data-value="scalene">세 변의 길이가 모두 다른 삼각형<input type="radio" name="side" value="scalene"></label>
-          <label class="opt" data-group="side" data-value="isosceles">이등변삼각형<input type="radio" name="side" value="isosceles"></label>
-          <label class="opt" data-group="side" data-value="equilateral">정삼각형<input type="radio" name="side" value="equilateral"></label>
-        </div>
-        <div class="grid" id="angleGroup" style="margin-top:6px">
-          <label class="opt" data-group="angle" data-value="acute">예각삼각형<input type="radio" name="angle" value="acute"></label>
-          <label class="opt" data-group="angle" data-value="right">직각삼각형<input type="radio" name="angle" value="right"></label>
-          <label class="opt" data-group="angle" data-value="obtuse">둔각삼각형<input type="radio" name="angle" value="obtuse"></label>
-        </div>
-        <div class="split" style="margin-top:12px">
-          <div>
-            <div id="feedback" class="notice">시작 버튼을 누르세요.</div>
-          </div>
-          <div class="right">
-            <button id="btnSubmit" disabled>제출</button>
-          </div>
-        </div>
-        <div class="footer">※ 오답 시 <b>3초간</b> 선택이 잠깁니다. 다음 문제로 넘어가면 선택은 자동 초기화됩니다.</div>
-      </section>
+    <aside class="side">
+      <div class="bins" id="bins">
+        <div class="bin" data-key="acute"   aria-label="예각삼각형"     tabindex="0"><span class="badge">각</span>예각삼각형</div>
+        <div class="bin" data-key="right"   aria-label="직각삼각형"     tabindex="0"><span class="badge">각</span>직각삼각형</div>
+        <div class="bin" data-key="obtuse"  aria-label="둔각삼각형"     tabindex="0"><span class="badge">각</span>둔각삼각형</div>
+        <div class="bin" data-key="scalene" aria-label="세 변 모두 다름" tabindex="0"><span class="badge">변</span>세 변의 길이가 모두 다른 삼각형</div>
+        <div class="bin" data-key="isosceles" aria-label="이등변"      tabindex="0"><span class="badge">변</span>이등변삼각형</div>
+        <div class="bin" data-key="equilateral" aria-label="정삼각형" tabindex="0"><span class="badge">변</span>정삼각형</div>
+      </div>
+      <div class="footer">
+        <div class="hint">카드를 눌러 뒤집고, 해당하는 칸으로 드래그하세요. 헷갈리면 <b>버리기</b>로 넘길 수 있어요.</div>
+      </div>
+    </aside>
+
+    <div class="start-overlay" id="start">
+      <div class="start-card">
+        <h1>시작할까요?</h1>
+        <p>카드 9장을 뒤집어 삼각형의 <b>각</b>과 <b>변</b> 속성에 맞게 분류하세요.</p>
+        <button id="startBtn" class="secondary" style="min-width:140px">시작</button>
+      </div>
     </div>
+
+    <div class="blocker" id="blocker" style="display:none">
+      <div class="start-card" style="padding:16px 22px">다음 삼각형을 준비중… (2초)</div>
+    </div>
+
+    <div class="mission" id="mission" style="display:none">
+      <div class="start-card">
+        <h1 style="font-size:44px">🎉 미션 완료!</h1>
+        <p style="font-size:18px">6가지 속성을 모두 채웠습니다.</p>
+      </div>
+    </div>
+
+    <button id="discardBtn" class="danger" disabled>버리기</button>
+
+    <div class="toast" id="toast">안내</div>
   </div>
 
-  <script>
-    // ===== 설정 =====
-    const TOTAL_QUESTIONS = 15;
-    const BANNED_MIN = 75; // (deg) non-right 에서 금지 구간
-    const BANNED_MAX = 105;
+<script>
+(function(){
+  const EPS = 0.02; // cm equality tolerance
+  const RESET_AFTER = 3; // ✅ 3장의 카드를 사용하면 새 덱으로 교체
+  const toRad = d=> d*Math.PI/180;
+  const toDeg = r=> r*180/Math.PI;
+  const clamp = (x, a, b)=> Math.max(a, Math.min(b, x));
+  const rnd = (min,max)=> Math.random()*(max-min)+min;
+  const rndInt = (min,max)=> Math.floor(rnd(min,max+1));
+  const fmtLen = x=> Math.round(x) + " cm"; // 1cm 단위 표기
+  const fmtDeg = x=> (Math.abs(x-90) < 0.5 ? 90 : Math.round(x)) + "°"; // 1° 단위 표기
 
-    // ===== 엘리먼트 =====
-    const $ = s => document.querySelector(s);
-    const canvas = $('#triCanvas');
-    const ctx = canvas.getContext('2d');
-    const progressEl = $('#progress');
-    const correctCntEl = $('#correctCnt');
-    const timerEl = $('#timer');
-    const btnStart = $('#btnStart');
-    const btnReset = $('#btnReset');
-    const btnSubmit = $('#btnSubmit');
-    const feedback = $('#feedback');
+  // ---- Triangle generators ----
+  function fromAngles(aA, aB, aC, maxSide=6){
+    const sA = Math.sin(toRad(aA)), sB = Math.sin(toRad(aB)), sC = Math.sin(toRad(aC));
+    const m = rnd(3.5, maxSide); // choose target max side ≤ 6 cm
+    const k = m / Math.max(sA,sB,sC);
+    const A = k*sA, B=k*sB, C=k*sC; // sides opposite A,B,C
+    return [A,B,C];
+  }
+  function anglesFromSides(a,b,c){
+    const A = toDeg(Math.acos(clamp((b*b + c*c - a*a)/(2*b*c), -1, 1)));
+    const B = toDeg(Math.acos(clamp((a*a + c*c - b*b)/(2*a*c), -1, 1)));
+    const C = 180 - A - B;
+    return [A,B,C];
+  }
+  function classifyAngle(As){
+    const maxA = Math.max(...As);
+    if (Math.abs(maxA - 90) < 0.1) return 'right';
+    return maxA < 90 ? 'acute' : 'obtuse';
+  }
+  function classifySides(a,b,c){
+    const eq = (x,y)=> Math.abs(x-y) < EPS;
+    if (eq(a,b) && eq(b,c)) return 'equilateral';
+    if (eq(a,b) || eq(b,c) || eq(a,c)) return 'isosceles';
+    return 'scalene';
+  }
 
-    // 카드(옵션) DOM
-    const cardEls = [...document.querySelectorAll('.opt')];
-
-    // ===== 상태 =====
-    let started = false;
-    let qIndex = 0; // 0..14
-    let correctCnt = 0;
-    let timerId = null; let startTime = 0;
-    let current = null; // {sides:[a,b,c], sideType, angleType}
-    let locked = false;
-
-    // ===== 도우미 =====
-    const randInt = (mn,mx)=> Math.floor(Math.random()*(mx-mn+1))+mn;
-    const nearly = (x,y,eps=1e-9)=> Math.abs(x-y) <= eps;
-
-    function resetCards(){
-      document.querySelectorAll('.opt.selected').forEach(el=> el.classList.remove('selected'));
-      document.querySelectorAll('.opt input').forEach(i=>{ i.checked=false; });
-      btnSubmit.disabled = true;
+  function genEquilateral(){
+    const s = rndInt(3, 6); // 정수 cm 선택
+    const sides=[s,s,s];
+    const ang=[60,60,60];
+    return {sides, ang, angleType:'acute', sideType:'equilateral'};
+  }
+  function genIsoAcute(){
+    const theta = rnd(30, 60); // vertex angle
+    const fac = Math.sqrt(2*(1 - Math.cos(toRad(theta)))); // base / a
+    const aMax = 6 / fac; // ensure base ≤ 6
+    const a = rnd(3.0, Math.min(6.0, aMax)); // equal sides
+    const b = a * fac; // base
+    const [A,B,C] = anglesFromSides(b,a,a);
+    return {sides:[b,a,a], ang:[A,B,C], angleType:'acute', sideType:'isosceles'};
+  }
+  function genIsoRight(){
+    const a = rnd(2.5, 4.2); // legs; hyp ≤ 6
+    const b = a; const c = a*Math.SQRT2; // hypotenuse
+    return {sides:[c,a,b], ang:[90,45,45], angleType:'right', sideType:'isosceles'};
+  }
+  function genIsoObtuse(){
+    const theta = rnd(111, 140);
+    const fac = Math.sqrt(2*(1 - Math.cos(toRad(theta)))); // base / a
+    const aMax = 6 / fac; // ensure base ≤ 6
+    const a = rnd(2.6, Math.min(4.0, aMax));
+    const b = a * fac;
+    const [A,B,C] = anglesFromSides(b,a,a);
+    return {sides:[b,a,a], ang:[A,B,C], angleType:'obtuse', sideType:'isosceles'};
+  }
+  function genRightScalene(){
+    const s = rnd(0.8, 1.2); // scale 3-4-5, hyp 5s ≤ 6
+    let a = 3*s, b=4*s, c=5*s; // c is hyp
+    const ang=[90, Math.atan2(3,4)*180/Math.PI, Math.atan2(4,3)*180/Math.PI];
+    return {sides:[c,a,b], ang:[90, ang[1], ang[2]], angleType:'right', sideType:'scalene'};
+  }
+  function genAcuteScalene(){
+    let A, B, C;
+    for(let t=0;t<100;t++){
+      A = rnd(30, 60);
+      B = rnd(30, 60);
+      C = 180 - A - B;
+      if (C>30 && C<60) break;
     }
-    function getSelections(){
-      const s = document.querySelector('input[name="side"]:checked');
-      const a = document.querySelector('input[name="angle"]:checked');
-      return s && a ? {side:s.value, angle:a.value} : null;
+    const sides = fromAngles(A,B,C,6);
+    if (new Set(sides.map(x=>x.toFixed(2))).size < 3){
+      A += 2; C -= 2;
+      sides.splice(0,3, ...fromAngles(A,B,C,6));
     }
-    function updateTopBar(){
-      progressEl.textContent = `${Math.min(qIndex, TOTAL_QUESTIONS)}/${TOTAL_QUESTIONS}`;
-      correctCntEl.textContent = String(correctCnt);
-    }
-    function fmtTime(ms){
-      const t = Math.max(0, ms|0);
-      const m = String(Math.floor(t/60000)).padStart(2,'0');
-      const s = String(Math.floor((t%60000)/1000)).padStart(2,'0');
-      const cs = String(Math.floor((t%1000)/10)).padStart(2,'0');
-      return `${m}:${s}.${cs}`;
-    }
-    function startTimer(){
-      startTime = Date.now();
-      timerId = setInterval(()=>{ timerEl.textContent = fmtTime(Date.now()-startTime); }, 31);
-    }
-    function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+    return {sides, ang:[A,B,C], angleType:'acute', sideType:'scalene'};
+  }
+  function genObtuseScalene(){
+    const A = rnd(111, 140);
+    let B = rnd(25, 58);
+    let C = 180 - A - B;
+    if (C < 20 || C >= 70){ B = 180 - A - 40; C = 40; }
+    const sides = fromAngles(A,B,C,6);
+    return {sides, ang:[A,B,C], angleType:'obtuse', sideType:'scalene'};
+  }
 
-    // ===== 수학 유틸 =====
-    function classifySide(a,b,c){
-      const eps=1e-9;
-      if(nearly(a,b,eps) && nearly(b,c,eps)) return 'equilateral';
-      if(nearly(a,b,eps) || nearly(b,c,eps) || nearly(a,c,eps)) return 'isosceles';
-      return 'scalene';
-    }
-    function classifyAngle(a,b,c){
-      const s=[a,b,c].sort((x,y)=>x-y); const x=s[0], y=s[1], z=s[2];
-      const lhs = x*x + y*y, rhs=z*z; const eps=1e-8;
-      if(Math.abs(lhs-rhs)<=eps) return 'right';
-      return lhs>rhs? 'acute':'obtuse';
-    }
-    function anglesDeg(a,b,c){
-      // 법코사인: A는 a 대변의 각
-      function ang(op, ad1, ad2){
-        const v = (ad1*ad1 + ad2*ad2 - op*op) / (2*ad1*ad2);
-        const clamped = Math.max(-1, Math.min(1, v));
-        return Math.acos(clamped) * 180/Math.PI;
-      }
-      return [ang(a,b,c), ang(b,a,c), ang(c,a,b)];
-    }
-    function safeAngles(a,b,c){
-      const type = classifyAngle(a,b,c);
-      if(type==='right') return true;
-      const angs = anglesDeg(a,b,c);
-      return angs.every(A => (A < BANNED_MIN || A > BANNED_MAX));
-    }
+  const TYPE_DEF = [
+    {id:1, angle:'acute',  side:'scalene',     gen: genAcuteScalene},
+    {id:2, angle:'acute',  side:'isosceles',   gen: genIsoAcute},
+    {id:3, angle:'acute',  side:'equilateral', gen: genEquilateral},
+    {id:4, angle:'right',  side:'scalene',     gen: genRightScalene},
+    {id:5, angle:'right',  side:'isosceles',   gen: genIsoRight},
+    {id:6, angle:'obtuse', side:'scalene',     gen: genObtuseScalene},
+    {id:7, angle:'obtuse', side:'isosceles',   gen: genIsoObtuse}
+  ];
 
-    // ===== 생성기 (모두 정수 길이만 사용) =====
-    function genEquilateral(){
-      const L = randInt(4,12); // 4~12 cm
-      return [L,L,L];
-    }
-    function genIsosceles(angle){
-      for(let tries=0; tries<300; tries++){
-        const a = randInt(5,20); // equal sides
-        let cMin = 2, cMax = 2*a - 1;
-        if(angle==='acute'){
-          cMax = Math.min(cMax, Math.floor(Math.SQRT2*a) - 1);
-        } else if(angle==='obtuse'){
-          cMin = Math.max(cMin, Math.floor(Math.SQRT2*a) + 1);
-        } else if(angle==='right'){
-          continue; // 정수 변으로는 불가
-        }
-        if(cMin>cMax) continue;
-        const c = randInt(cMin, cMax);
-        const tri=[a,a,c];
-        if(classifyAngle(...tri)!==angle) continue;
-        if(!safeAngles(...tri)) continue;
-        return tri;
-      }
-      return null;
-    }
-    function genScaleneRight(){
-      const triples = [ [3,4,5], [5,12,13], [6,8,10], [7,24,25], [8,15,17], [9,12,15], [9,40,41], [12,16,20] ];
-      const t = triples[Math.floor(Math.random()*triples.length)].slice();
-      const k = randInt(1,2);
-      const tri = t.map(x=>x*k);
-      return tri;
-    }
-    function genScaleneAcute(){
-      for(let tries=0; tries<500; tries++){
-        let a = randInt(5,24), b = randInt(5,24), c = randInt(5,24);
-        if(a===b || b===c || a===c) continue;
-        if(!(a+b>c && a+c>b && b+c>a)) continue;
-        if(classifyAngle(a,b,c)!=='acute') continue;
-        if(!safeAngles(a,b,c)) continue;
-        return [a,b,c];
-      }
-      return null;
-    }
-    function genScaleneObtuse(){
-      for(let tries=0; tries<500; tries++){
-        let a = randInt(6,28), b = randInt(6,28), c = randInt(6,28);
-        if(a===b || b===c || a===c) continue;
-        if(!(a+b>c && a+c>b && b+c>a)) continue;
-        if(classifyAngle(a,b,c)!=='obtuse') continue;
-        if(!safeAngles(a,b,c)) continue;
-        return [a,b,c];
-      }
-      return null;
-    }
+  function prepareTypeBag(){
+    // 3 types duplicated (2 each = 6) + 3 single = 9 total
+    const shuffled = [...TYPE_DEF].sort(()=>Math.random()-0.5);
+    const dup = shuffled.slice(0,3), single = shuffled.slice(3,6);
+    const bag = [];
+    dup.forEach(t=> bag.push(t,t));
+    single.forEach(t=> bag.push(t));
+    return bag.sort(()=>Math.random()-0.5);
+  }
 
-    function genTrianglePair(){
-      const anglePick = ['acute','right','obtuse'][randInt(0,2)];
-      const feasible = anglePick==='acute' ? ['scalene','isosceles','equilateral']
-                      : anglePick==='right' ? ['scalene']
-                      : ['scalene','isosceles'];
-      const sidePick = feasible[randInt(0,feasible.length-1)];
+  // ---- Geometry → Coordinates (SVG) ----
+  function coordsFromSides(a,b,c){
+    const A = (b*b + c*c - a*a)/(2*c); // x of point C
+    const xC = A; const y2 = b*b - A*A; const yC = Math.sqrt(Math.max(0,y2));
+    return [{x:0,y:0},{x:c,y:0},{x:xC,y:yC}]; // B(0,0), A(c,0), C(xC,yC)
+  }
+  function buildTriangleSVG(sides){
+    const sorted = [...sides].map((v,i)=>({v,i})).sort((p,q)=>q.v - p.v);
+    const baseIndex = sorted[0].i;
+    let a,b,c;
+    if (baseIndex===0){ a=sides[0]; b=sides[1]; c=sides[2]; }
+    else if (baseIndex===1){ a=sides[1]; b=sides[2]; c=sides[0]; }
+    else { a=sides[2]; b=sides[0]; c=sides[1]; }
 
-      for(let tries=0; tries<300; tries++){
-        let tri=null;
-        if(sidePick==='equilateral') tri = genEquilateral();
-        else if(sidePick==='isosceles') tri = genIsosceles(anglePick);
-        else if(sidePick==='scalene'){
-          if(anglePick==='right') tri = genScaleneRight();
-          else if(anglePick==='acute') tri = genScaleneAcute();
-          else tri = genScaleneObtuse();
-        }
-        if(!tri) continue;
-        const sType = classifySide(...tri);
-        const aType = classifyAngle(...tri);
-        if(sidePick==='equilateral' && aType!=='acute') continue;
-        if(sType===sidePick && aType=== (sidePick==='equilateral' ? 'acute' : anglePick)){
-          return {sides:tri, sideType:sType, angleType:aType};
-        }
-      }
-      return {sides:genEquilateral(), sideType:'equilateral', angleType:'acute'};
-    }
+    const A = toDeg(Math.acos(clamp((b*b + c*c - a*a)/(2*b*c), -1, 1)));
+    const B = toDeg(Math.acos(clamp((a*a + c*c - b*b)/(2*a*c), -1, 1)));
+    const C = 180 - A - B;
 
-    // ===== 렌더링 (정확 기하 유지) =====
-    function drawRightMarker(Cx,Cy, Ax,Ay, Bx,By){
-      // C에서 CA, CB 방향 단위벡터
-      const ux = (Ax-Cx), uy = (Ay-Cy); const ul = Math.hypot(ux,uy)||1; const u0x=ux/ul, u0y=uy/ul;
-      const vx = (Bx-Cx), vy = (By-Cy); const vl = Math.hypot(vx,vy)||1; const v0x=vx/vl, v0y=vy/vl;
-      const m = 14; // marker size
-      const p1x = Cx + u0x*m, p1y = Cy + u0y*m;
-      const cornerx = p1x + v0x*m, cornery = p1y + v0y*m;
-      const p2x = Cx + v0x*m, p2y = Cy + v0y*m;
-      ctx.beginPath();
-      ctx.moveTo(p1x,p1y); ctx.lineTo(cornerx,cornery); ctx.lineTo(p2x,p2y);
-      ctx.strokeStyle = '#9fd0ff'; ctx.lineWidth = 2; ctx.stroke();
-    }
+    const pts = coordsFromSides(a,b,c);
 
-    function drawTriangleWithLabels(a,b,c){
-      // 정확한 비율 유지를 위해 가장 긴 변을 밑변(AB)으로, 나머지는 AC=b, BC=a로 배치
-      const sorted = [a,b,c].slice().sort((x,y)=>y-x); // 내림차순
-      const cLen = sorted[0]; // AB(밑변)
-      const bLen = sorted[1]; // AC
-      const aLen = sorted[2]; // BC
+    // --- layout: 넉넉한 여백 + 내부 라벨 배치로 잘림 방지 ---
+    const padX = 36, padY = 32;
+    const targetW = 340, targetH = 260;
+    const pxPerCm = Math.min( (targetW-2*padX)/c, (targetH-2*padY)/(Math.max(pts[2].y, 1e-6)) );
 
-      // C 좌표 계산 (AB=cLen, AC=bLen, BC=aLen)
-      let x = (bLen*bLen + cLen*cLen - aLen*aLen) / (2*cLen);
-      let y = Math.sqrt(Math.max(bLen*bLen - x*x, 0));
+    const P = pts.map(p=>({x:padX + p.x*pxPerCm, y:targetH - (padY + p.y*pxPerCm)}));
+    const path = `M ${P[0].x},${P[0].y} L ${P[1].x},${P[1].y} L ${P[2].x},${P[2].y} Z`;
 
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const pad=34; const W=canvas.width-2*pad, H=canvas.height-2*pad;
-      const maxDim = Math.max(cLen, y);
-      const s = (Math.min(W,H)) / (maxDim*1.15 + 1); // 등비 스케일(왜곡 없음)
+    const mid = (p,q)=>({x:(p.x+q.x)/2, y:(p.y+q.y)/2});
+    const mAB = mid(P[0],P[1]), mBC = mid(P[0],P[2]), mCA = mid(P[1],P[2]);
 
-      const Ax = pad, Ay = canvas.height - pad;
-      const Bx = pad + cLen*s, By = canvas.height - pad;
-      const Cx = pad + x*s, Cy = canvas.height - pad - y*s;
+    // 각도 라벨은 꼭짓점에서 무게중심 방향으로 안쪽 배치
+    const centroid = {x:(P[0].x+P[1].x+P[2].x)/3, y:(P[0].y+P[1].y+P[2].y)/3};
+    const toward = (v)=>({x:v.x + (centroid.x - v.x)*0.18, y:v.y + (centroid.y - v.y)*0.18});
+    const lblA = toward(P[0]);
+    const lblB = toward(P[1]);
+    const lblC = toward(P[2]);
 
-      // 윤곽선
-      ctx.lineWidth = 3; ctx.strokeStyle = '#d9e6ff';
-      ctx.beginPath(); ctx.moveTo(Ax,Ay); ctx.lineTo(Bx,By); ctx.lineTo(Cx,Cy); ctx.closePath(); ctx.stroke();
+    const svg = `
+      <svg viewBox="0 0 ${targetW} ${targetH}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="${getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()}" flood-opacity="0.55" />
+          </filter>
+        </defs>
+        <rect x="0" y="0" width="100%" height="100%" rx="18" ry="18" fill="url(#bggrad)" opacity="0"/>
+        <g filter="url(#glow)">
+          <path d="${path}" fill="rgba(125,188,255,0.10)" stroke="#b9d6ff" stroke-width="2.4" />
+        </g>
+        <g class="labels">
+          <text class="label" x="${mAB.x}" y="${mAB.y-4}" text-anchor="middle">${fmtLen(c)}</text>
+          <text class="label" x="${mBC.x}" y="${mBC.y-4}" text-anchor="middle">${fmtLen(a)}</text>
+          <text class="label" x="${mCA.x}" y="${mCA.y-4}" text-anchor="middle">${fmtLen(b)}</text>
+          <text class="label" x="${lblA.x}" y="${lblA.y}">A ${fmtDeg(A)}</text>
+          <text class="label" x="${lblB.x}" y="${lblB.y}">B ${fmtDeg(B)}</text>
+          <text class="label" x="${lblC.x}" y="${lblC.y}">C ${fmtDeg(C)}</text>
+        </g>
+      </svg>`;
+    return {svg, angles:[A,B,C]};
+  }
 
-      // 길이 라벨 (정수 cm, AB/BC/CA 표기 없음)
-      ctx.fillStyle = '#c6d6ff'; ctx.font = '16px ui-monospace, Menlo, Consolas, monospace';
-      function mid(x1,y1,x2,y2){ return [(x1+x2)/2, (y1+y2)/2]; }
-      function write(txt, x,y){ ctx.save(); ctx.translate(x,y); ctx.fillText(txt,0,0); ctx.restore(); }
+  // ---- Build deck ----
+  let deck = [];
+  let usedThisDeck = 0; // picks (정답/버리기 포함) 카운트
+  let activeIndex = null; // 현재 활성 카드 idx
+  const binsState = { acute:false, right:false, obtuse:false, scalene:false, isosceles:false, equilateral:false };
 
-      const [mABx,mABy] = mid(Ax,Ay,Bx,By); write(`${cLen} cm`, mABx-16, mABy-8);
-      const [mBCx,mBCy] = mid(Bx,By,Cx,Cy); write(`${aLen} cm`, mBCx+8, mBCy);
-      const [mCAx,mCAy] = mid(Cx,Cy,Ax,Ay); write(`${bLen} cm`, mCAx-40, mCAy-6);
-
-      // 직각 표시 (가장 긴 변의 맞은편 각)
-      const aType = classifyAngle(a,b,c);
-      if(aType==='right'){
-        drawRightMarker(Cx,Cy, Ax,Ay, Bx,By);
-      }
-    }
-
-    // ===== 게임 로직 =====
-    function nextProblem(){
-      current = genTrianglePair();
-      qIndex += 1;
-      drawTriangleWithLabels(...current.sides);
-      updateTopBar();
-      feedback.textContent = `문항 #${qIndex} — 변/각을 선택하여 제출하세요.`;
-      resetCards();
-    }
-
-    function onSubmit(){
-      if(!started || locked) return;
-      const sel = getSelections(); if(!sel) return;
-      const truthSide = classifySide(...current.sides);
-      const truthAngle = classifyAngle(...current.sides);
-      const ok = (sel.side===truthSide) && (sel.angle===truthAngle);
-      if(ok){
-        correctCnt += 1; updateTopBar();
-        feedback.innerHTML = '✅ <b>정답!</b> 다음 문제로 넘어갑니다.';
-        if(correctCnt >= TOTAL_QUESTIONS){
-          stopTimer();
-          feedback.innerHTML = `🎉 <b>완료!</b> 총 소요 시간: <b>${timerEl.textContent}</b>`;
-          btnSubmit.disabled = true; btnReset.disabled = false; started=false; return;
-        }
-        nextProblem();
+  function makeTriangle(tdef){
+    let tri;
+    for(let tries=0; tries<60; tries++){
+      const g = tdef.gen();
+      const [A,B,C] = anglesFromSides(g.sides[0], g.sides[1], g.sides[2]);
+      let angleType = classifyAngle([A,B,C]);
+      // 비직각은 70~110 제외
+      if (tdef.angle==='right'){
+        if (Math.abs(Math.max(A,B,C)-90) > 0.3) continue;
       } else {
-        feedback.innerHTML = '❌ <b>오답</b> — 3초간 잠깁니다. 표시된 길이를 잘 보세요.';
-        resetCards();
-        lockInputs(3000);
+        const nonRight = [A,B,C].filter(x=> Math.abs(x-90) >= 0.5);
+        if (nonRight.some(x=> x>=70 && x<=110)) continue;
       }
+      let sideType = classifySides(...g.sides);
+
+      // 🔒 정삼각형 강제 규칙: 표시 길이가 모두 같은 경우, 정삼각형으로 고정
+      const disp = g.sides.map(x=> Math.round(x));
+      if (disp[0]===disp[1] && disp[1]===disp[2]){
+        const L = Math.max(2, Math.min(6, disp[0]));
+        const sides=[L,L,L];
+        const ang=[60,60,60];
+        const {svg} = buildTriangleSVG(sides);
+        tri = {sides, angles:ang, angleType:'acute', sideType:'equilateral', svg};
+        break;
+      }
+
+      if (Math.max(...g.sides) > 6 + 1e-6) continue; // longest side ≤ 6
+      const {svg, angles} = buildTriangleSVG(g.sides);
+      tri = {sides:g.sides, angles, angleType, sideType, svg};
+      break;
     }
-
-    function lockInputs(ms){
-      locked = true;
-      document.querySelectorAll('.opt').forEach(el=> el.classList.add('disabled'));
-      btnSubmit.disabled = true;
-      setTimeout(()=>{
-        locked = false;
-        document.querySelectorAll('.opt').forEach(el=> el.classList.remove('disabled'));
-        btnSubmit.disabled = !getSelections();
-        feedback.textContent = `문항 #${qIndex} — 다시 시도해 보세요.`;
-      }, ms);
+    if(!tri){
+      const fallback = genEquilateral();
+      const {svg} = buildTriangleSVG(fallback.sides);
+      tri = {sides:fallback.sides, angles:[60,60,60], angleType:'acute', sideType:'equilateral', svg};
     }
+    return tri;
+  }
 
-    // 카드 클릭(박스 전체 클릭 & 하이라이트)
-    function attachCardHandlers(){
-      cardEls.forEach(el=>{
-        el.addEventListener('click', ()=>{
-          if(locked) return;
-          const group = el.dataset.group; const value = el.dataset.value;
-          // 그룹 내 기존 선택 해제
-          document.querySelectorAll(`.opt[data-group="${group}"]`).forEach(x=> x.classList.remove('selected'));
-          el.classList.add('selected');
-          // 실제 라디오 체크
-          const input = el.querySelector('input'); input.checked = true;
-          btnSubmit.disabled = !getSelections();
-        });
-      });
+  function buildDeck(){
+    deck = [];
+    usedThisDeck = 0; // 새 덱 시작 시 카운트 초기화
+    const bag = prepareTypeBag();
+    for(let i=0;i<9;i++){
+      const tdef = bag[i % bag.length];
+      const tri = makeTriangle(tdef);
+      deck.push({ id:i, num:i+1, ...tri, used:false });
     }
+  }
 
-    btnSubmit.addEventListener('click', onSubmit);
+  // ---- UI rendering ----
+  const grid = document.getElementById('cardGrid');
+  const start = document.getElementById('start');
+  const startBtn = document.getElementById('startBtn');
+  const discardBtn = document.getElementById('discardBtn');
+  const blocker = document.getElementById('blocker');
+  const mission = document.getElementById('mission');
+  const toastEl = document.getElementById('toast');
 
-    btnStart.addEventListener('click', ()=>{
-      started = true; qIndex=0; correctCnt=0; updateTopBar();
-      btnStart.disabled = true; btnReset.disabled = true; feedback.textContent='문제를 불러오는 중…';
-      resetCards();
-      startTimer();
-      nextProblem();
-      btnSubmit.disabled = true;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 1200);
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    deck.forEach((card, idx)=>{
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.dataset.idx = idx;
+      el.innerHTML = `
+        <div class="card-inner">
+          <div class="face front">${card.num}</div>
+          <div class="face back">
+            <div class="triangle-wrap">${card.svg}</div>
+          </div>
+        </div>`;
+      el.addEventListener('click', ()=> onCardClick(el, idx));
+      grid.appendChild(el);
     });
+  }
 
-    btnReset.addEventListener('click', ()=>{
-      stopTimer();
-      timerEl.textContent = '00:00.00';
-      started=false; qIndex=0; correctCnt=0; updateTopBar();
-      feedback.textContent='시작 버튼을 누르세요.';
-      resetCards();
-      btnStart.disabled = false; btnReset.disabled = true; btnSubmit.disabled = true;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+  function onCardClick(el, idx){
+    if (blocker.style.display==='flex' || mission.style.display==='flex') return; // during delay or finished
+    const card = deck[idx];
+    if (card.used) return;
+    if (activeIndex !== null && activeIndex!==idx) return; // only one at a time
+    activeIndex = idx;
+    el.classList.add('revealed','active');
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart', (ev)=>{
+      ev.dataTransfer.setData('text/plain', String(idx));
+      ev.dataTransfer.effectAllowed = 'move';
     });
+    discardBtn.disabled = false;
+  }
 
-    // 초기
-    attachCardHandlers();
-    updateTopBar();
-  </script>
+  function triangleProps(card){
+    return [card.angleType, card.sideType];
+  }
+
+  function showMissionOverlay(){
+    // 모든 상호작용 차단
+    discardBtn.disabled = true;
+    mission.style.display='flex';
+  }
+
+  function endTurn(idx){
+    const el = grid.querySelector(`.card[data-idx="${idx}"]`);
+    if (el){ el.style.visibility='hidden'; el.style.pointerEvents='none'; }
+    deck[idx].used = true; usedThisDeck++;
+    activeIndex = null;
+    discardBtn.disabled = true;
+    blocker.style.display='flex';
+    setTimeout(()=>{
+      blocker.style.display='none';
+      const allUsed = deck.every(c=> c.used);
+      const allBins = Object.values(binsState).every(v=> v);
+      if (allBins){
+        showMissionOverlay();
+        return;
+      }
+      if (usedThisDeck >= RESET_AFTER){
+        buildDeck();
+        renderGrid();
+        showToast('새 카드 9장을 배치했어요.');
+        return;
+      }
+      if (allUsed){
+        showToast('카드를 모두 사용했어요!');
+      }
+    }, 2000);
+  }
+
+  // ---- Drag & Drop bins ----
+  document.querySelectorAll('.bin').forEach(bin=>{
+    bin.addEventListener('dragover', (ev)=>{
+      if (activeIndex===null || mission.style.display==='flex') return;
+      ev.preventDefault();
+      bin.classList.add('accepting');
+    });
+    bin.addEventListener('dragleave', ()=> bin.classList.remove('accepting'));
+    bin.addEventListener('drop', (ev)=>{
+      ev.preventDefault();
+      bin.classList.remove('accepting');
+      if (activeIndex===null || mission.style.display==='flex') return;
+      const key = bin.dataset.key;
+      const card = deck[activeIndex];
+      if (binsState[key]){ showToast('이미 채운 칸이에요. 다른 칸을 시도하거나 버리기를 누르세요.'); return; }
+      const props = triangleProps(card);
+      if (props.includes(key)){
+        binsState[key] = true;
+        bin.classList.add('filled');
+        showToast('정답! 해당 속성을 채웠어요.');
+        endTurn(activeIndex);
+      } else {
+        showToast('올바르지 않아요. 다시 시도하거나 버리기를 누르세요.');
+      }
+    });
+  });
+
+  // Discard button (항상 표시)
+  document.getElementById('discardBtn').addEventListener('click', ()=>{
+    if (activeIndex===null || mission.style.display==='flex') return;
+    showToast('버렸어요. 다음 카드로…');
+    endTurn(activeIndex);
+  });
+
+  // Start
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    document.getElementById('start').style.display='none';
+    buildDeck();
+    renderGrid();
+  });
+
+  // ---------------- TESTS (console) ----------------
+  (function runTests(){
+    try{
+      // 기본 생성 검증
+      buildDeck();
+      console.assert(deck.length===9, '덱 크기는 9여야 합니다.');
+      const maxSideOk = deck.every(c=> Math.max(...c.sides) <= 6 + 1e-6);
+      console.assert(maxSideOk, '모든 삼각형의 최대 변 길이는 6cm 이하여야 합니다.');
+
+      // 정삼각형 각 60° 보장
+      const eq = genEquilateral();
+      const eqAngles = anglesFromSides(...eq.sides).map(x=>Math.round(x));
+      console.assert(eqAngles[0]===60 && eqAngles[1]===60 && eqAngles[2]===60, '정삼각형 각은 60°');
+
+      // 직각 3-4-5
+      const angs = anglesFromSides(3,4,5).map(x=>Math.round(x));
+      console.assert(angs.includes(90), '3-4-5는 직각');
+
+      // 리셋 기준 3장 확인
+      console.assert(RESET_AFTER===3, '덱 리셋 기준은 3장이어야 합니다.');
+
+      console.log('%c테스트 통과','background:#16a34a;color:white;padding:2px 6px;border-radius:6px');
+    }catch(e){ console.error('테스트 실패:', e); }
+  })();
+
+})();
+</script>
 </body>
 </html>
